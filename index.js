@@ -51,6 +51,10 @@ app.get('/api/lobby/:id/:username/:socketId', async (req,res) => {
   let socketId = req.params.socketId
   let result = await lobby.findOne({"_id": new ObjectID(id)})
   if (result){
+    if (socketId == result.p1socketId){
+      res.send("{\"status\" : \"You are already in\"}")
+      return
+    }
     if (!result.opponent) {
       let update = await lobby.updateOne({"_id": new ObjectID(id)}, {$set: {"player2": opponent, p2socketId: socketId, "joinedAt": Date()}})
       if (update.modifiedCount) {

@@ -41,6 +41,8 @@ $( `#createLobbyButton` ).click(function(el) {
   .then(function(response) {
     //$( `#lobby` ).html(`Lobby created : ${response}`);
     $( `#lobbyId` ).val(`${response}`);
+    $( `#lobbyId` ).select();
+    document.execCommand( 'copy' );
   })
 })
 
