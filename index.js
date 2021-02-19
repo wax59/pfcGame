@@ -12,6 +12,7 @@ const uri = "mongodb://localhost:27017/pfc";
 const client = new MongoClient(uri);
 
 let db,lobby = {} 
+
 async function connectDB() {
   try {
     await client.connect();
@@ -73,7 +74,7 @@ app.get('/api/lobby/:id/:username/:socketId', async (req,res) => {
   }
 })
 
-function winner(p1Choice, p2Choice){
+async function winner(p1Choice, p2Choice, id){
   let winner = ''
   if (p1Choice == 'pierre'){
     if (p2Choice == 'feuille'){
@@ -108,14 +109,18 @@ function winner(p1Choice, p2Choice){
   } else {
     //Error
   }
+  if (winner == 'p1') {
+    let update = await lobby.updateOne({"_id": new ObjectID(id)}, { $inc: { p1Score: 1 } })
+  } else if (winner == 'p2') {
+    let update = await lobby.updateOne({"_id": new ObjectID(id)}, { $inc: { p2Score: 1 } })
+  }
   return winner
 }
 
 io.on("connection", (socket) => {
   console.log('SocketIO : new user connected');
-  socket.on("game choice", async (msg) => {
+  socket.on("turn choice", async (msg) => {
     let lobbyData = await lobby.findOne({"_id": new ObjectID(msg.id)}) 
-    console.log(lobbyData)
     if(lobbyData.p1socketId == socket.id || lobbyData.p2socketId == socket.id) {
       if (lobbyData.p1socketId == socket.id) {
         let update = await lobby.updateOne({"_id": new ObjectID(msg.id)}, {$set: {"p1Choice": msg.choice}})
@@ -125,14 +130,16 @@ io.on("connection", (socket) => {
       io.to(socket.id).emit( 'choice ok', msg.choice );
       lobbyData = await lobby.findOne({"_id": new ObjectID(msg.id)}) 
       if(lobbyData.p1Choice && lobbyData.p2Choice){
-        let winnerPlayer = winner(lobbyData.p1Choice, lobbyData.p2Choice)
+        let winnerPlayer = await winner(lobbyData.p1Choice, lobbyData.p2Choice, lobbyData._id)
+        console.log(winnerPlayer)
         let update = await lobby.updateOne({"_id": new ObjectID(msg.id)}, {$set: {"winner": winnerPlayer}})
         lobbyData = await lobby.findOne({"_id": new ObjectID(msg.id)}) 
         io.to(lobbyData.p1socketId).emit( 'turn done', lobbyData );
         io.to(lobbyData.p2socketId).emit( 'turn done', lobbyData );
-        update = await lobby.updateOne({"_id": new ObjectID(msg.id)}, {$set: {"p1Choice": '', "p2Choice": ''}})
+        update = await lobby.updateOne({"_id": new ObjectID(msg.id)}, {$set: {"p1Choice": '', "p2Choice": '', "lastTurn": Date()}})
         io.to(lobbyData.p1socketId).emit( 'turn reseted', lobbyData );
         io.to(lobbyData.p2socketId).emit( 'turn reseted', lobbyData );
+        console.log(lobbyData)
       }
     } else {
       //Error
