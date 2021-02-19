@@ -118,7 +118,7 @@ async function winner(p1Choice, p2Choice, id){
 }
 
 io.on("connection", (socket) => {
-  console.log('SocketIO : new user connected');
+  //console.log('SocketIO : new user connected');
   socket.on("turn choice", async (msg) => {
     let lobbyData = await lobby.findOne({"_id": new ObjectID(msg.id)}) 
     if(lobbyData.p1socketId == socket.id || lobbyData.p2socketId == socket.id) {
@@ -131,7 +131,6 @@ io.on("connection", (socket) => {
       lobbyData = await lobby.findOne({"_id": new ObjectID(msg.id)}) 
       if(lobbyData.p1Choice && lobbyData.p2Choice){
         let winnerPlayer = await winner(lobbyData.p1Choice, lobbyData.p2Choice, lobbyData._id)
-        console.log(winnerPlayer)
         let update = await lobby.updateOne({"_id": new ObjectID(msg.id)}, {$set: {"winner": winnerPlayer}})
         lobbyData = await lobby.findOne({"_id": new ObjectID(msg.id)}) 
         io.to(lobbyData.p1socketId).emit( 'turn done', lobbyData );
@@ -139,7 +138,6 @@ io.on("connection", (socket) => {
         update = await lobby.updateOne({"_id": new ObjectID(msg.id)}, {$set: {"p1Choice": '', "p2Choice": '', "lastTurn": Date()}})
         io.to(lobbyData.p1socketId).emit( 'turn reseted', lobbyData );
         io.to(lobbyData.p2socketId).emit( 'turn reseted', lobbyData );
-        console.log(lobbyData)
       }
     } else {
       //Error

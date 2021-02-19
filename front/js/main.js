@@ -24,11 +24,15 @@ $( `#createLobbyButton` ).click(function(el) {
 $( `#joinLobbyButton` ).click(function(el) {
   let id = $( "#lobbyId" ).val()
   let username = $( "#username" ).val()
-  let socketId = socket.id
-  fetch(`/api/lobby/${id}/${username}/${socketId}`)
-  .then(response => response.json())
-  .then(response => console.log(response))
-  .catch(error => alert("Erreur : " + error));
+  if (username) {
+    let socketId = socket.id
+    fetch(`/api/lobby/${id}/${username}/${socketId}`)
+    .then(response => response.json())
+    .then(response => console.log(response))
+    .catch(error => alert("Erreur : " + error));
+  } else {
+    alert('Please enter your username')
+  }
 })
 
 $( `#pierre` ).click(function(el) {
